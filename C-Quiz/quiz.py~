@@ -1,0 +1,261 @@
+import random, pylab
+xVals = []
+yVals = []
+wVals = []
+for i in range(10000):
+    xVals.append(random.random())
+    yVals.append(random.random())
+    wVals.append(random.random())
+xVals = pylab.array(xVals)
+yVals = pylab.array(yVals)
+wVals = pylab.array(wVals)
+xVals = xVals + xVals
+zVals = xVals + yVals
+tVals = xVals + yVals + wVals
+"""
+pylab.figure
+pylab.plot(sorted(xVals), sorted(yVals))
+pylab.show()
+"""
+
+"""code from lecture"""
+import pylab
+
+class Location(object):
+    def __init__(self, x, y):
+        """x and y are floats"""
+        self.x = x
+        self.y = y
+        
+    def move(self, deltaX, deltaY):
+        """deltaX and deltaY are floats"""
+        return Location(self.x + deltaX, self.y + deltaY)
+    
+    def getX(self):
+        return self.x
+    
+    def getY(self):
+        return self.y
+    
+    def distFrom(self, other):
+        ox = other.x
+        oy = other.y
+        xDist = self.x - ox
+        yDist = self.y - oy
+        return (xDist**2 + yDist**2)**0.5
+    
+    def __str__(self):
+        return '<' + str(self.x) + ', ' + str(self.y) + '>'
+
+class Field(object):
+    def __init__(self):
+        self.drunks = {}
+        
+    def addDrunk(self, drunk, loc):
+        if drunk in self.drunks:
+            raise ValueError('Duplicate drunk')
+        else:
+            self.drunks[drunk] = loc
+            
+    def moveDrunk(self, drunk):
+        if not drunk in self.drunks:
+            raise ValueError('Drunk not in field')
+        xDist, yDist = drunk.takeStep()
+        currentLocation = self.drunks[drunk]
+        #use move method of Location to get new location
+        self.drunks[drunk] = currentLocation.move(xDist, yDist)
+        
+    def getLoc(self, drunk):
+        if not drunk in self.drunks:
+            raise ValueError('Drunk not in field')
+        return self.drunks[drunk]
+
+import random
+
+class Drunk(object):
+    def __init__(self, name):
+        self.name = name
+    def __str__(self):
+        return 'This drunk is named ' + self.name
+
+"""New code"""
+def walkVector(f, d, numSteps):
+    start = f.getLoc(d)
+    for s in range(numSteps):
+        f.moveDrunk(d)
+    return(f.getLoc(d).getX() - start.getX(),
+           f.getLoc(d).getY() - start.getY())
+
+"""Drunk variations"""
+import math
+class UsualDrunk(Drunk):
+    def takeStep(self):
+        stepChoices =\
+            [(0.0,1.0), (0.0,-1.0), (1.0, 0.0), (-1.0, 0.0)]
+        return random.choice(stepChoices)
+
+class ColdDrunk(Drunk):
+    def takeStep(self):
+        stepChoices =\
+            [(0.0,0.9), (0.0,-1.03), (1.03, 0.0), (-1.03, 0.0)]
+        return random.choice(stepChoices)
+
+class EDrunk(Drunk):
+    def takeStep(self):
+        ang = 2 * math.pi * random.random()
+        length = 0.5 + 0.5 * random.random()
+        return (length * math.sin(ang), length * math.cos(ang))
+
+class PhotoDrunk(Drunk):
+    def takeStep(self):
+        stepChoices =\
+                    [(0.0, 0.5),(0.0, -0.5),
+                     (1.5, 0.0),(-1.5, 0.0)]
+        return random.choice(stepChoices)
+
+class DDrunk(Drunk):
+    def takeStep(self):
+        stepChoices =\
+                    [(0.85, 0.85), (-0.85, -0.85),
+                     (-0.56, 0.56), (0.56, -0.56)] 
+        return random.choice(stepChoices) 
+    
+"""Test of drunk moves"""
+"""x=[]
+y=[]
+f=Field()
+for i in range(1000):
+    drunk=UsualDrunk("Drunk "+`i`)
+    loc=Location(0.0,0.0)
+    f.addDrunk(drunk,loc)
+    a,b=walkVector(f, drunk, 1000)
+    x.append(a)
+    y.append(b)
+pylab.figure
+pylab.plot(x, y,'ro')
+pylab.axis([-100, 100, -100, 100])
+pylab.show()
+"""
+
+"""problem : 5-2"""
+def drawing_without_replacement_sim(numTrials):
+    '''
+    Runs numTrials trials of a Monte Carlo simulation
+    of drawing 3 balls out of a bucket containing
+    4 red and 4 green balls. Balls are not replaced once
+    drawn. Returns a float - the fraction of times 3 
+    balls of the same color were drawn in the first 3 draws.
+    '''
+    count=0
+    for i in range(numTrials):
+        balls=['r','r','r','r','g','g','g','g']
+        taken=[]
+        for i in range(3):
+            k=random.choice(range(8-i))
+            taken.append(balls[k])
+            balls.remove(balls[k])
+        if taken[0]==taken[1] and taken[1]==taken[2]:
+            count+=1
+    return float(count)/float(numTrials)    
+          
+##print drawing_without_replacement_sim(1000000)
+
+"""problem : 6-1"""
+# You are given this function
+def getMeanAndStd(X):
+    mean = sum(X)/float(len(X))
+    tot = 0.0
+    for x in X:
+        tot += (x - mean)**2
+    std = (tot/len(X))**0.5
+    return mean, std
+
+# You are given this class
+class Die(object):
+    def __init__(self, valList):
+        """ valList is not empty """
+        self.possibleVals = valList[:]
+    def roll(self):
+        return random.choice(self.possibleVals)
+
+# Implement this -- Coding Part 1 of 2
+def makeHistogram(values, numBins, xLabel, yLabel, title=None):
+    """
+      - values, a sequence of numbers
+      - numBins, a positive int
+      - xLabel, yLabel, title, are strings
+      - Produces a histogram of values with numBins bins and the indicated labels
+        for the x and y axis
+      - If title is provided by caller, puts that title on the figure and otherwise
+        does not title the figure
+    """
+    pylab.figure
+    pylab.hist(values, numBins)
+    pylab.xlabel(xLabel)
+    pylab.ylabel(yLabel)
+    if title<>None:
+        pylab.title(title)
+    pylab.show()
+    
+                    
+# Implement this -- Coding Part 2 of 2
+def getAverage(die, numRolls, numTrials):
+    """
+      - die, a Die
+      - numRolls, numTrials, are positive ints
+      - Calculates the expected mean value of the longest run of a number
+        over numTrials runs of numRolls rolls.
+      - Calls makeHistogram to produce a histogram of the longest runs for all
+        the trials. There should be 10 bins in the histogram
+      - Choose appropriate labels for the x and y axes.
+      - Returns the mean calculated
+    """
+    data=[]
+    for i in range(numTrials):
+        occ={}
+        #print occ
+        for l in die.possibleVals:
+            occ[l]=0
+        for j in range(numRolls):
+            k=die.roll()
+            #print k
+            occ[k]+=1
+            #print occ
+        data.append(longestRun(occ))
+        print occ, longestRun(occ)
+    mean,std=getMeanAndStd(data)
+    makeHistogram(data, 10, "long run", "number of occurance", title=None)
+    return mean   
+            
+                  
+import operator
+def longestRun(stats):
+    return max(stats.iteritems(), key=operator.itemgetter(1))[1]
+    
+# One test case
+print getAverage(Die([1,2,3,4,5,6,6,6,7]), 500, 10000)
+##print getAverage (Die([1,2,3,4,5,6,6,6,7]), 1, 1000)
+##print getAverage(Die([1,2,3,4,5,6,6,6,7]), 50, 1000)
+##print getAverage(Die([1,2,3,4,5,6]), 50, 1000)
+##print getAverage(Die([1,1]), 10, 1000)
+
+import itertools
+import operator
+
+def most_common(L):
+  # get an iterable of (item, iterable) pairs
+  SL = sorted((x, i) for i, x in enumerate(L))
+  # print 'SL:', SL
+  groups = itertools.groupby(SL, key=operator.itemgetter(0))
+  # auxiliary function to get "quality" for an item
+  def _auxfun(g):
+    item, iterable = g
+    count = 0
+    min_index = len(L)
+    for _, where in iterable:
+      count += 1
+      min_index = min(min_index, where)
+    # print 'item %r, count %r, minind %r' % (item, count, min_index)
+    return count, -min_index
+  # pick the highest-count/earliest item
+  return max(groups, key=_auxfun)[0]
